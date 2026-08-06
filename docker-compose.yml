@@ -1,0 +1,65 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: freshcart-postgres
+
+    environment:
+      POSTGRES_DB: freshcart
+      POSTGRES_USER: freshcart
+      POSTGRES_PASSWORD: freshcart
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./checkout-api/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    ports:
+      - "5432:5432"
+
+    networks:
+      - freshcart-network
+
+  checkout-api:
+    build:
+      context: ./checkout-api
+
+    image: freshcart-checkout-api:v1.0.0
+
+    container_name: checkout-api
+
+    depends_on:
+      - postgres
+
+    env_file:
+      - ./checkout-api/.env
+
+    ports:
+      - "3000:3000"
+
+    networks:
+      - freshcart-network
+
+  storefront:
+    build:
+      context: ./storefront
+
+    image: freshcart-storefront:v1.0.0
+
+    container_name: storefront
+
+    depends_on:
+      - checkout-api
+
+    ports:
+      - "8080:80"
+
+    networks:
+      - freshcart-network
+
+volumes:
+
+  postgres_data:
+
+networks:
+
+  freshcart-network:
